@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader, Download, Copy } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader, Download, Copy, RotateCcw } from 'lucide-react';
 import './App.css';
 
 const App = () => {
@@ -245,11 +245,37 @@ const App = () => {
       const data = await response.json();
       
       if (response.ok) {
-        setBackupCodes(data.backupCodes);
+        setBackupCodes(data.backup_codes || data.backupCodes);
         setShowBackupCodes(true);
-        setMessage({ type: 'success', text: 'Nuevos códigos de respaldo generados' });
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Nuevos códigos de respaldo generados' 
+        });
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al generar códigos' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getBackupCodes = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setBackupCodes(data.backup_codes || data.backupCodes);
+        setShowBackupCodes(true);
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al obtener códigos' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -266,12 +292,17 @@ const App = () => {
   };
 
   const downloadBackupCodes = () => {
-    const codesText = backupCodes.join('\n');
+    const codesText = `Códigos de Respaldo - ${userData.email}\n\n` +
+                     `Generado: ${new Date().toLocaleString()}\n\n` +
+                     backupCodes.join('\n') +
+                     `\n\n⚠️ IMPORTANTE: Guarda estos códigos en un lugar seguro. ` +
+                     `Son tu única forma de recuperar el acceso si pierdes tu dispositivo.`;
+    
     const blob = new Blob([codesText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `backup-codes-${userData.email}.txt`;
+    a.download = `backup-codes-${userData.email}-${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -410,7 +441,8 @@ const App = () => {
               <div className="backup-codes-content">
                 <p className="backup-codes-warning">
                   ⚠️ <strong>Guarda estos códigos en un lugar seguro</strong><br/>
-                  Son tu única forma de recuperar el acceso si pierdes tu dispositivo
+                  Son tu única forma de recuperar el acceso si pierdes tu dispositivo.<br/>
+                  <strong>Los códigos anteriores ya no funcionarán.</strong>
                 </p>
                 <div className="backup-codes-grid">
                   {backupCodes.map((code, index) => (
@@ -443,8 +475,13 @@ const App = () => {
               <div className="alert-content">
                 <span>MFA está activo y protegiendo tu cuenta</span>
                 <div className="mfa-actions">
+                  <button onClick={getBackupCodes} disabled={loading} className="btn-link">
+                    <Key size={16} />
+                    Ver códigos de respaldo
+                  </button>
                   <button onClick={generateBackupCodes} disabled={loading} className="btn-link">
-                    Generar nuevos códigos de respaldo
+                    <RotateCcw size={16} />
+                    Regenerar códigos
                   </button>
                   <button onClick={disableMFA} disabled={loading} className="btn-link danger">
                     Desactivar MFA
@@ -479,6 +516,7 @@ const App = () => {
     );
   }
 
+  // ... (el resto del código de login/register se mantiene igual)
   return (
     <div className="login-wrapper">
       <div className="login-card">
