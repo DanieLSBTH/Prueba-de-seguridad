@@ -235,7 +235,7 @@ const App = () => {
   const generateBackupCodes = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes`, {
+      const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes/regenerate`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
