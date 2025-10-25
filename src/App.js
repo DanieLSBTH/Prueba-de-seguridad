@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader } from 'lucide-react';
-import './App.css'; // Importa los estilos
+import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader, Download, Copy } from 'lucide-react';
+import './App.css';
 
 const App = () => {
   const [mode, setMode] = useState('login');
@@ -16,6 +16,8 @@ const App = () => {
   const [mfaSecret, setMfaSecret] = useState(null);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [backupCodes, setBackupCodes] = useState(null);
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
 
   const API_URL = 'https://seguridad-9ub0.onrender.com';
 
@@ -112,6 +114,8 @@ const App = () => {
     setMessage({ type: '', text: '' });
     setMfaRequired(false);
     setShowMfaSetup(false);
+    setBackupCodes(null);
+    setShowBackupCodes(false);
   };
 
   const getProfile = async () => {
@@ -181,6 +185,12 @@ const App = () => {
         setUserData({ ...userData, mfa_enabled: true });
         setShowMfaSetup(false);
         setFormData({ ...formData, mfaToken: '' });
+        
+        // Mostrar códigos de respaldo si están disponibles
+        if (data.backupCodes) {
+          setBackupCodes(data.backupCodes);
+          setShowBackupCodes(true);
+        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Código incorrecto' });
       }
@@ -210,6 +220,8 @@ const App = () => {
       if (response.ok) {
         setMessage({ type: 'success', text: 'MFA desactivado' });
         setUserData({ ...userData, mfa_enabled: false });
+        setBackupCodes(null);
+        setShowBackupCodes(false);
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al desactivar MFA' });
       }
@@ -218,6 +230,52 @@ const App = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateBackupCodes = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setBackupCodes(data.backupCodes);
+        setShowBackupCodes(true);
+        setMessage({ type: 'success', text: 'Nuevos códigos de respaldo generados' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al generar códigos' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyBackupCodes = () => {
+    const codesText = backupCodes.join('\n');
+    navigator.clipboard.writeText(codesText).then(() => {
+      setMessage({ type: 'success', text: 'Códigos copiados al portapapeles' });
+    });
+  };
+
+  const downloadBackupCodes = () => {
+    const codesText = backupCodes.join('\n');
+    const blob = new Blob([codesText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup-codes-${userData.email}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (showLoadingScreen) {
@@ -343,11 +401,56 @@ const App = () => {
             </div>
           )}
 
-          {userData.mfa_enabled && (
+          {showBackupCodes && backupCodes && (
+            <div className="backup-codes-panel">
+              <h4 className="backup-codes-title">
+                <Key size={24} />
+                Códigos de Respaldo
+              </h4>
+              <div className="backup-codes-content">
+                <p className="backup-codes-warning">
+                  ⚠️ <strong>Guarda estos códigos en un lugar seguro</strong><br/>
+                  Son tu única forma de recuperar el acceso si pierdes tu dispositivo
+                </p>
+                <div className="backup-codes-grid">
+                  {backupCodes.map((code, index) => (
+                    <div key={index} className="backup-code-item">
+                      <span className="backup-code-number">{index + 1}.</span>
+                      <span className="backup-code-value">{code}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="backup-codes-actions">
+                  <button onClick={copyBackupCodes} className="btn btn-secondary">
+                    <Copy size={16} />
+                    Copiar Códigos
+                  </button>
+                  <button onClick={downloadBackupCodes} className="btn btn-primary">
+                    <Download size={16} />
+                    Descargar TXT
+                  </button>
+                  <button onClick={() => setShowBackupCodes(false)} className="btn btn-secondary">
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {userData.mfa_enabled && !showBackupCodes && (
             <div className="alert alert-success">
               <CheckCircle size={24} />
-              <span>MFA está activo y protegiendo tu cuenta</span>
-              <button onClick={disableMFA} disabled={loading} className="btn-link">Desactivar</button>
+              <div className="alert-content">
+                <span>MFA está activo y protegiendo tu cuenta</span>
+                <div className="mfa-actions">
+                  <button onClick={generateBackupCodes} disabled={loading} className="btn-link">
+                    Generar nuevos códigos de respaldo
+                  </button>
+                  <button onClick={disableMFA} disabled={loading} className="btn-link danger">
+                    Desactivar MFA
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

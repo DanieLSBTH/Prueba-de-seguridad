@@ -845,3 +845,118 @@ body {
     width: 100%;
   }
 }
+/* Backup Codes Panel */
+.backup-codes-panel {
+  background: linear-gradient(135deg, #fef3c7, #fef7cd);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.backup-codes-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.backup-codes-content {
+  text-align: center;
+}
+
+.backup-codes-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #92400e;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.backup-codes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.backup-code-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: monospace;
+}
+
+.backup-code-number {
+  color: #6b7280;
+  font-size: 0.8rem;
+  min-width: 20px;
+}
+
+.backup-code-value {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.backup-codes-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.backup-codes-actions .btn {
+  min-width: 160px;
+}
+
+/* MFA Actions */
+.mfa-actions {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-link.danger {
+  color: var(--danger);
+}
+
+.btn-link.danger:hover {
+  color: #dc2626;
+}
+
+/* Responsive adjustments for backup codes */
+@media (max-width: 480px) {
+  .backup-codes-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .backup-codes-actions {
+    flex-direction: column;
+  }
+  
+  .backup-codes-actions .btn {
+    width: 100%;
+  }
+  
+  .mfa-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
