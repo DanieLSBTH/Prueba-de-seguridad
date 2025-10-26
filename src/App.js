@@ -498,43 +498,47 @@ const App = () => {
           )}
 
           {showMfaSetup && qrCode && (
-            <div className="mfa-setup-panel">
-              <h4 className="mfa-title">
-                <QrCode size={24} />
-                Configurar Autenticación de Dos Factores
-              </h4>
-              <div className="mfa-content">
-                <div className="qr-section">
-                  <p className="qr-instruction">Escanea este código QR con Google Authenticator</p>
-                  <img src={qrCode} alt="QR Code" className="qr-image" />
-                  <div className="secret-box">
-                    <p className="secret-label">O ingresa este código manualmente:</p>
-                    <p className="secret-code">{mfaSecret}</p>
-                  </div>
-                </div>
-                <div className="verify-section">
-                  <label className="input-label">Código de verificación de 6 dígitos</label>
-                  <input
-                    type="text"
-                    name="mfaToken"
-                    value={formData.mfaToken}
-                    onChange={handleChange}
-                    placeholder="123456"
-                    maxLength="6"
-                    className="mfa-input"
-                  />
-                </div>
-                <div className="button-group">
-                  <button onClick={verifyMFA} disabled={loading || formData.mfaToken.length !== 6} className="btn btn-primary">
-                    {loading ? <Loader className="spin" size={20} /> : 'Verificar y Activar'}
-                  </button>
-                  <button onClick={() => { setShowMfaSetup(false); setFormData({ ...formData, mfaToken: '' }); }} className="btn btn-secondary">
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+  <div className="mfa-setup-panel">
+    <h4 className="mfa-title">
+      <QrCode size={24} />
+      Configurar Autenticación de Dos Factores
+    </h4>
+    <div className="mfa-content">
+      <div className="qr-section">
+        <p className="qr-instruction">Escanea este código QR con Google Authenticator</p>
+        <img src={qrCode} alt="QR Code" className="qr-image" />
+        <div className="secret-box">
+          <p className="secret-label">O ingresa este código manualmente:</p>
+          <p className="secret-code">{mfaSecret}</p>
+        </div>
+      </div>
+      <div className="verify-section">
+        <label className="input-label">Código de verificación de 6 dígitos</label>
+        <input
+          type="text"
+          name="mfaToken"
+          value={formData.mfaToken}
+          onChange={handleChange}
+          placeholder="123456"
+          maxLength="6"
+          className="mfa-input"
+        />
+        <p className="form-hint mfa-verification-hint">
+          ⚠️ <strong>Importante:</strong> Este es el código de <strong>6 dígitos</strong> de Google Authenticator. 
+          Después de verificar, recibirás <strong>10 códigos de respaldo de 16 caracteres</strong> que debes guardar.
+        </p>
+      </div>
+      <div className="button-group">
+        <button onClick={verifyMFA} disabled={loading || formData.mfaToken.length !== 6} className="btn btn-primary">
+          {loading ? <Loader className="spin" size={20} /> : 'Verificar y Activar'}
+        </button>
+        <button onClick={() => { setShowMfaSetup(false); setFormData({ ...formData, mfaToken: '' }); }} className="btn btn-secondary">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
           {showBackupCodes && backupCodes && (
   <div className="backup-codes-panel">
@@ -546,10 +550,30 @@ const App = () => {
       <div className="backup-codes-warning critical">
         <AlertCircle size={20} />
         <div>
-          <strong>⚠️ GUARDA ESTOS CÓDIGOS EN UN LUGAR SEGURO</strong>
-          <p>No podrás verlos de nuevo después de cerrar esta ventana. Si pierdes tu teléfono, necesitarás estos códigos para acceder a tu cuenta.</p>
+          <strong>⚠️ GUARDA ESTOS CÓDIGOS DE RESPALDO</strong>
+          <p>Estos son códigos de <strong>16 caracteres</strong> para recuperar tu cuenta si pierdes el acceso a Google Authenticator.</p>
+          <p><strong>No los confundas</strong> con los códigos de 6 dígitos de Google Authenticator.</p>
+          <p><em>Cada código solo se puede usar una vez.</em></p>
         </div>
       </div>
+      
+      <div className="backup-codes-explanation">
+        <div className="explanation-item">
+          <div className="explanation-icon">🔐</div>
+          <div className="explanation-text">
+            <strong>Código de 6 dígitos</strong>
+            <span>Para iniciar sesión diariamente (Google Authenticator)</span>
+          </div>
+        </div>
+        <div className="explanation-item">
+          <div className="explanation-icon">📋</div>
+          <div className="explanation-text">
+            <strong>Código de 16 caracteres</strong>
+            <span>Para emergencias si pierdes tu teléfono (estos códigos)</span>
+          </div>
+        </div>
+      </div>
+
       <div className="backup-codes-grid">
         {backupCodes.map((code, index) => (
           <div key={index} className="backup-code-item">
@@ -558,6 +582,7 @@ const App = () => {
           </div>
         ))}
       </div>
+      
       <div className="backup-codes-actions">
         <button onClick={copyBackupCodes} className="btn btn-secondary">
           <Copy size={16} />
@@ -567,7 +592,8 @@ const App = () => {
           <Download size={16} />
           Descargar TXT
         </button>
-        <button onClick={() => setShowBackupCodes(false)} className="btn btn-secondary">
+        <button onClick={() => setShowBackupCodes(false)} className="btn btn-success">
+          <CheckCircle size={16} />
           He guardado los códigos
         </button>
       </div>
