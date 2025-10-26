@@ -960,3 +960,140 @@ body {
     gap: 0.75rem;
   }
 }
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease-in;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.modal-subtitle {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.modal-body {
+  margin-bottom: 2rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* Responsive modal */
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1.5rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+}
+
+/* Critical Warning Styles */
+.backup-codes-warning.critical {
+  background: linear-gradient(135deg, #fef3f3, #fee2e2);
+  border: 2px solid #ef4444;
+  border-left: 6px solid #ef4444;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  text-align: left;
+}
+
+.backup-codes-warning.critical strong {
+  color: #dc2626;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.backup-codes-warning.critical p {
+  color: #991b1b;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.backup-codes-warning.critical .lucide-alert-circle {
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Make the backup codes panel more prominent */
+.backup-codes-panel {
+  background: linear-gradient(135deg, #fff7ed, #fffbeb);
+  border: 3px solid #f59e0b;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.5s ease-in;
+  position: relative;
+}
+
+.backup-codes-panel::before {
+  content: "⚠️ IMPORTANTE";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f59e0b;
+  color: white;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.backup-codes-title {
+  color: #92400e;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}

@@ -18,6 +18,9 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [backupCodes, setBackupCodes] = useState(null);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [modalPassword, setModalPassword] = useState('');
+  const [modalAction, setModalAction] = useState(''); // 'regenerate' o 'get'
 
   const API_URL = 'https://seguridad-9ub0.onrender.com';
 
@@ -116,6 +119,8 @@ const App = () => {
     setShowMfaSetup(false);
     setBackupCodes(null);
     setShowBackupCodes(false);
+    setShowPasswordModal(false);
+    setModalPassword('');
   };
 
   const getProfile = async () => {
@@ -163,43 +168,55 @@ const App = () => {
   };
 
   const verifyMFA = async () => {
-    if (!formData.mfaToken || formData.mfaToken.length !== 6) {
-      setMessage({ type: 'error', text: 'Ingresa el código de 6 dígitos' });
-      return;
-    }
+  if (!formData.mfaToken || formData.mfaToken.length !== 6) {
+    setMessage({ type: 'error', text: 'Ingresa el código de 6 dígitos' });
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/auth/mfa/verify`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: formData.mfaToken })
+  setLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/api/auth/mfa/verify`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token: formData.mfaToken })
+    });
+    const data = await response.json();
+    
+    if (response.ok) {
+      setMessage({ 
+        type: 'success', 
+        text: data.message || '¡MFA activado exitosamente!' 
       });
-      const data = await response.json();
+      setUserData({ ...userData, mfa_enabled: true });
+      setShowMfaSetup(false);
+      setFormData({ ...formData, mfaToken: '' });
       
-      if (response.ok) {
-        setMessage({ type: 'success', text: '¡MFA activado exitosamente!' });
-        setUserData({ ...userData, mfa_enabled: true });
-        setShowMfaSetup(false);
-        setFormData({ ...formData, mfaToken: '' });
+      // Mostrar códigos de respaldo si están disponibles
+      if (data.backup_codes || data.backupCodes) {
+        const codes = data.backup_codes || data.backupCodes;
+        setBackupCodes(codes);
+        setShowBackupCodes(true);
         
-        // Mostrar códigos de respaldo si están disponibles
-        if (data.backupCodes) {
-          setBackupCodes(data.backupCodes);
-          setShowBackupCodes(true);
+        // Mostrar advertencia si viene en la respuesta
+        if (data.warning) {
+          setMessage({ 
+            type: 'info', 
+            text: `${data.message}. ${data.warning}` 
+          });
         }
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Código incorrecto' });
       }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error de conexión' });
-    } finally {
-      setLoading(false);
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Código incorrecto' });
     }
-  };
+  } catch (error) {
+    setMessage({ type: 'error', text: 'Error de conexión' });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const disableMFA = async () => {
     const password = prompt('Ingresa tu contraseña para desactivar MFA:');
@@ -233,6 +250,12 @@ const App = () => {
   };
 
   const generateBackupCodes = async () => {
+    if (!modalPassword) {
+      setModalAction('regenerate');
+      setShowPasswordModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes/regenerate`, {
@@ -240,47 +263,74 @@ const App = () => {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ password: modalPassword })
       });
       const data = await response.json();
       
       if (response.ok) {
         setBackupCodes(data.backup_codes || data.backupCodes);
         setShowBackupCodes(true);
+        setShowPasswordModal(false);
+        setModalPassword('');
         setMessage({ 
           type: 'success', 
           text: data.message || 'Nuevos códigos de respaldo generados' 
         });
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al generar códigos' });
+        setModalPassword('');
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
+      setModalPassword('');
     } finally {
       setLoading(false);
     }
   };
 
   const getBackupCodes = async () => {
+    setModalAction('get');
+    setShowPasswordModal(true);
+  };
+
+  const handleGetBackupCodes = async () => {
+    if (!modalPassword) return;
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes`, {
+        method: 'POST',
         headers: { 
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: modalPassword })
       });
       const data = await response.json();
       
       if (response.ok) {
         setBackupCodes(data.backup_codes || data.backupCodes);
         setShowBackupCodes(true);
+        setShowPasswordModal(false);
+        setModalPassword('');
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al obtener códigos' });
+        setModalPassword('');
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
+      setModalPassword('');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordModalSubmit = () => {
+    if (modalAction === 'regenerate') {
+      generateBackupCodes();
+    } else if (modalAction === 'get') {
+      handleGetBackupCodes();
     }
   };
 
@@ -336,6 +386,60 @@ const App = () => {
   if (userData && token) {
     return (
       <div className="dashboard-wrapper">
+        {/* Modal para contraseña */}
+        {showPasswordModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">
+                  <Lock size={24} />
+                  Verificación de Seguridad
+                </h3>
+                <p className="modal-subtitle">
+                  {modalAction === 'regenerate' 
+                    ? 'Ingresa tu contraseña para regenerar los códigos de respaldo'
+                    : 'Ingresa tu contraseña para ver los códigos de respaldo'
+                  }
+                </p>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Contraseña</label>
+                  <div className="input-wrapper">
+                    <Lock className="input-icon" size={20} />
+                    <input 
+                      type="password" 
+                      value={modalPassword}
+                      onChange={(e) => setModalPassword(e.target.value)}
+                      placeholder="Ingresa tu contraseña"
+                      className="form-input"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button 
+                  onClick={handlePasswordModalSubmit}
+                  disabled={!modalPassword || loading}
+                  className="btn btn-primary"
+                >
+                  {loading ? <Loader className="spin" size={20} /> : 'Continuar'}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setModalPassword('');
+                  }}
+                  className="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="dashboard-card">
           <div className="success-header">
             <div className="success-icon">
@@ -433,41 +537,43 @@ const App = () => {
           )}
 
           {showBackupCodes && backupCodes && (
-            <div className="backup-codes-panel">
-              <h4 className="backup-codes-title">
-                <Key size={24} />
-                Códigos de Respaldo
-              </h4>
-              <div className="backup-codes-content">
-                <p className="backup-codes-warning">
-                  ⚠️ <strong>Guarda estos códigos en un lugar seguro</strong><br/>
-                  Son tu única forma de recuperar el acceso si pierdes tu dispositivo.<br/>
-                  <strong>Los códigos anteriores ya no funcionarán.</strong>
-                </p>
-                <div className="backup-codes-grid">
-                  {backupCodes.map((code, index) => (
-                    <div key={index} className="backup-code-item">
-                      <span className="backup-code-number">{index + 1}.</span>
-                      <span className="backup-code-value">{code}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="backup-codes-actions">
-                  <button onClick={copyBackupCodes} className="btn btn-secondary">
-                    <Copy size={16} />
-                    Copiar Códigos
-                  </button>
-                  <button onClick={downloadBackupCodes} className="btn btn-primary">
-                    <Download size={16} />
-                    Descargar TXT
-                  </button>
-                  <button onClick={() => setShowBackupCodes(false)} className="btn btn-secondary">
-                    Cerrar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+  <div className="backup-codes-panel">
+    <h4 className="backup-codes-title">
+      <Key size={24} />
+      Códigos de Respaldo Generados
+    </h4>
+    <div className="backup-codes-content">
+      <div className="backup-codes-warning critical">
+        <AlertCircle size={20} />
+        <div>
+          <strong>⚠️ GUARDA ESTOS CÓDIGOS EN UN LUGAR SEGURO</strong>
+          <p>No podrás verlos de nuevo después de cerrar esta ventana. Si pierdes tu teléfono, necesitarás estos códigos para acceder a tu cuenta.</p>
+        </div>
+      </div>
+      <div className="backup-codes-grid">
+        {backupCodes.map((code, index) => (
+          <div key={index} className="backup-code-item">
+            <span className="backup-code-number">{index + 1}.</span>
+            <span className="backup-code-value">{code}</span>
+          </div>
+        ))}
+      </div>
+      <div className="backup-codes-actions">
+        <button onClick={copyBackupCodes} className="btn btn-secondary">
+          <Copy size={16} />
+          Copiar Códigos
+        </button>
+        <button onClick={downloadBackupCodes} className="btn btn-primary">
+          <Download size={16} />
+          Descargar TXT
+        </button>
+        <button onClick={() => setShowBackupCodes(false)} className="btn btn-secondary">
+          He guardado los códigos
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
           {userData.mfa_enabled && !showBackupCodes && (
             <div className="alert alert-success">
@@ -479,7 +585,10 @@ const App = () => {
                     <Key size={16} />
                     Ver códigos de respaldo
                   </button>
-                  <button onClick={generateBackupCodes} disabled={loading} className="btn-link">
+                  <button onClick={() => {
+                    setModalAction('regenerate');
+                    setShowPasswordModal(true);
+                  }} disabled={loading} className="btn-link">
                     <RotateCcw size={16} />
                     Regenerar códigos
                   </button>
