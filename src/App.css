@@ -361,9 +361,11 @@ body {
 
 .mfa-input-field {
   text-align: center;
-  font-size: 1.5rem;
-  letter-spacing: 0.5rem;
-  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-family: 'Courier New', monospace;
+  /* Quitamos max-length para permitir 16 caracteres */
 }
 
 .mfa-hint {
@@ -1178,4 +1180,32 @@ body {
 
 .mfa-verification-hint strong {
   color: #1e40af;
+}
+
+/* MFA Options */
+.mfa-options {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.mfa-option {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.mfa-option strong {
+  color: #1f2937;
+}
+
+/* Placeholder styling */
+.mfa-input-field::placeholder {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  font-family: inherit;
 }

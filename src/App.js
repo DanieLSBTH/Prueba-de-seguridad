@@ -290,9 +290,39 @@ const App = () => {
   };
 
   const getBackupCodes = async () => {
-    setModalAction('get');
-    setShowPasswordModal(true);
-  };
+  setLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/api/auth/mfa/backup-codes/remaining`, {
+      method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    
+    if (response.ok) {
+      let messageText = `Tienes ${data.remaining} códigos de respaldo restantes.`;
+      
+      if (data.warning) {
+        messageText += ` ${data.warning}`;
+      }
+      
+      if (data.remaining === 0) {
+        setMessage({ type: 'warning', text: messageText });
+      } else if (data.remaining <= 2) {
+        setMessage({ type: 'warning', text: messageText });
+      } else {
+        setMessage({ type: 'info', text: messageText });
+      }
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Error al obtener información de códigos' });
+    }
+  } catch (error) {
+    setMessage({ type: 'error', text: 'Error de conexión' });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGetBackupCodes = async () => {
     if (!modalPassword) return;
@@ -540,7 +570,7 @@ const App = () => {
   </div>
 )}
 
-          {showBackupCodes && backupCodes && (
+         {showBackupCodes && backupCodes && (
   <div className="backup-codes-panel">
     <h4 className="backup-codes-title">
       <Key size={24} />
@@ -551,26 +581,8 @@ const App = () => {
         <AlertCircle size={20} />
         <div>
           <strong>⚠️ GUARDA ESTOS CÓDIGOS DE RESPALDO</strong>
-          <p>Estos son códigos de <strong>16 caracteres</strong> para recuperar tu cuenta si pierdes el acceso a Google Authenticator.</p>
-          <p><strong>No los confundas</strong> con los códigos de 6 dígitos de Google Authenticator.</p>
-          <p><em>Cada código solo se puede usar una vez.</em></p>
-        </div>
-      </div>
-      
-      <div className="backup-codes-explanation">
-        <div className="explanation-item">
-          <div className="explanation-icon">🔐</div>
-          <div className="explanation-text">
-            <strong>Código de 6 dígitos</strong>
-            <span>Para iniciar sesión diariamente (Google Authenticator)</span>
-          </div>
-        </div>
-        <div className="explanation-item">
-          <div className="explanation-icon">📋</div>
-          <div className="explanation-text">
-            <strong>Código de 16 caracteres</strong>
-            <span>Para emergencias si pierdes tu teléfono (estos códigos)</span>
-          </div>
+          <p>Si pierdes acceso a Google Authenticator, usa uno de estos códigos en el campo de "Código de Autenticación" durante el login.</p>
+          <p><strong>Cada código solo se puede usar una vez.</strong> Después de usar uno, se mostrarán cuántos te quedan.</p>
         </div>
       </div>
 
@@ -608,8 +620,8 @@ const App = () => {
                 <span>MFA está activo y protegiendo tu cuenta</span>
                 <div className="mfa-actions">
                   <button onClick={getBackupCodes} disabled={loading} className="btn-link">
-                    <Key size={16} />
-                    Ver códigos de respaldo
+                  <Key size={16} />
+                  Ver códigos restantes
                   </button>
                   <button onClick={() => {
                     setModalAction('regenerate');
@@ -713,18 +725,32 @@ const App = () => {
             </div>
 
             {mode === 'login' && mfaRequired && (
-              <div className="form-group">
-                <label className="form-label">
-                  <Smartphone size={18} />
-                  Código de Autenticación (MFA)
-                </label>
-                <div className="input-wrapper">
-                  <Key className="input-icon" size={20} />
-                  <input type="text" name="mfaToken" value={formData.mfaToken} onChange={handleChange} placeholder="123456" maxLength="6" className="form-input mfa-input-field" required />
-                </div>
-                <p className="form-hint mfa-hint">Ingresa el código de 6 dígitos de Google Authenticator</p>
-              </div>
-            )}
+  <div className="form-group">
+    <label className="form-label">
+      <Smartphone size={18} />
+      Código de Autenticación (MFA)
+    </label>
+    <div className="input-wrapper">
+      <Key className="input-icon" size={20} />
+      <input 
+        type="text" 
+        name="mfaToken" 
+        value={formData.mfaToken} 
+        onChange={handleChange} 
+        placeholder="123456 o ABCD-EFGH-IJKL-MNOP" 
+        className="form-input mfa-input-field" 
+      />
+    </div>
+    <div className="mfa-options">
+      <p className="mfa-option">
+        <strong>Código de 6 dígitos:</strong> De Google Authenticator (uso normal)
+      </p>
+      <p className="mfa-option">
+        <strong>Código de 16 caracteres:</strong> Uno de tus códigos de respaldo (solo emergencias)
+      </p>
+    </div>
+  </div>
+)}
 
             <button type="submit" disabled={loading} className="btn btn-primary btn-submit">
               {loading ? <Loader className="spin" size={24} /> : mode === 'login' ? <><LogIn size={22} /> Iniciar Sesión</> : <><UserPlus size={22} /> Crear Cuenta</>}
