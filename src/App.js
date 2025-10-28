@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader, Download, Copy, RotateCcw } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, LogIn, UserPlus, Shield, CheckCircle, AlertCircle, Smartphone, QrCode, Key, Loader, Download, Copy, RotateCcw, ArrowLeft } from 'lucide-react';
 import './App.css';
 
 const App = () => {
@@ -21,6 +21,16 @@ const App = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [modalPassword, setModalPassword] = useState('');
   const [modalAction, setModalAction] = useState(''); // 'regenerate' o 'get'
+
+  // Nuevos estados para recuperación de contraseña
+  const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [tokenValid, setTokenValid] = useState(false);
+  const [tokenEmail, setTokenEmail] = useState('');
 
   const API_URL = 'https://seguridad-9ub0.onrender.com';
 
@@ -323,6 +333,302 @@ const App = () => {
     setLoading(false);
   }
 };
+
+
+ // ========== FUNCIONES DE RECUPERACIÓN DE CONTRASEÑA ==========
+
+  // PASO 1: Solicitar reset de contraseña
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!recoveryEmail) {
+      setMessage({ type: 'error', text: 'Ingresa tu correo electrónico' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/password/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: 'Se ha enviado un enlace de recuperación a tu correo electrónico. Revisa tu bandeja de entrada.' 
+        });
+        // Podrías mostrar un mensaje adicional sobre revisar spam
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al solicitar recuperación' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión con el servidor' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // PASO 2: Verificar token (se llama automáticamente cuando hay token en URL)
+  const verifyResetToken = async (token) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/password/verify/${token}`);
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        setTokenValid(true);
+        setTokenEmail(data.email);
+        setResetToken(token);
+        setShowResetPassword(true);
+        setMessage({ type: 'success', text: 'Token válido. Ahora puedes crear tu nueva contraseña.' });
+      } else {
+        setTokenValid(false);
+        setMessage({ 
+          type: 'error', 
+          text: data.error || 'El enlace de recuperación ha expirado o es inválido.' 
+        });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión con el servidor' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // PASO 3: Restablecer contraseña
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setMessage({ type: 'error', text: 'La contraseña debe tener al menos 8 caracteres' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/password/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          token: resetToken,
+          newPassword: newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión.' 
+        });
+        
+        // Redirigir al login después de 3 segundos
+        setTimeout(() => {
+          setPasswordRecoveryMode(false);
+          setShowResetPassword(false);
+          setRecoveryEmail('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setResetToken('');
+          setMode('login');
+        }, 3000);
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al restablecer la contraseña' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión con el servidor' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verificar si hay token en la URL al cargar el componente
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    
+    if (tokenFromUrl) {
+      setPasswordRecoveryMode(true);
+      setShowResetPassword(true);
+      verifyResetToken(tokenFromUrl);
+    }
+  }, []);
+
+  // ========== RENDERIZADO DE RECUPERACIÓN DE CONTRASEÑA ==========
+
+  // Pantalla de solicitud de recuperación
+  if (passwordRecoveryMode && !showResetPassword) {
+    return (
+      <div className="login-wrapper">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="header-logo">
+              <Shield size={40} />
+            </div>
+            <h1 className="header-title">Recuperar Contraseña</h1>
+            <p className="header-subtitle">Sistema Seguro UMG</p>
+          </div>
+
+          <div className="form-container">
+            <button 
+              onClick={() => setPasswordRecoveryMode(false)}
+              className="btn-back"
+            >
+              <ArrowLeft size={20} />
+              Volver al inicio de sesión
+            </button>
+
+            {message.text && (
+              <div className={`message message-${message.type}`}>
+                {message.type === 'success' ? <CheckCircle size={22} /> : <AlertCircle size={22} />}
+                <span>{message.text}</span>
+              </div>
+            )}
+
+            <div className="recovery-instructions">
+              <p>Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+            </div>
+
+            <form onSubmit={handleForgotPassword} className="auth-form">
+              <div className="form-group">
+                <label className="form-label">Correo Electrónico</label>
+                <div className="input-wrapper">
+                  <Mail className="input-icon" size={20} />
+                  <input 
+                    type="email" 
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    placeholder="usuario@ejemplo.com" 
+                    className="form-input" 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn btn-primary btn-submit">
+                {loading ? <Loader className="spin" size={24} /> : 'Enviar enlace de recuperación'}
+              </button>
+            </form>
+
+            <div className="recovery-note">
+              <p><strong>⚠️ Importante:</strong></p>
+              <ul>
+                <li>El enlace expira en 1 hora</li>
+                <li>Revisa tu carpeta de spam si no encuentras el correo</li>
+                <li>Tu contraseña actual seguirá funcionando hasta que completes el proceso</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla de restablecimiento de contraseña
+  if (passwordRecoveryMode && showResetPassword) {
+    return (
+      <div className="login-wrapper">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="header-logo">
+              <Shield size={40} />
+            </div>
+            <h1 className="header-title">Nueva Contraseña</h1>
+            <p className="header-subtitle">Sistema Seguro UMG</p>
+            {tokenValid && <p className="header-email">Para: {tokenEmail}</p>}
+          </div>
+
+          <div className="form-container">
+            {!tokenValid ? (
+              // Token inválido
+              <div className="token-invalid">
+                <div className="message message-error">
+                  <AlertCircle size={24} />
+                  <span>Enlace inválido o expirado</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    setPasswordRecoveryMode(false);
+                    setShowResetPassword(false);
+                  }}
+                  className="btn btn-primary"
+                >
+                  Volver al inicio de sesión
+                </button>
+              </div>
+            ) : (
+              // Formulario de nueva contraseña
+              <>
+                {message.text && (
+                  <div className={`message message-${message.type}`}>
+                    {message.type === 'success' ? <CheckCircle size={22} /> : <AlertCircle size={22} />}
+                    <span>{message.text}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleResetPassword} className="auth-form">
+                  <div className="form-group">
+                    <label className="form-label">Nueva Contraseña</label>
+                    <div className="input-wrapper">
+                      <Lock className="input-icon" size={20} />
+                      <input 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mínimo 8 caracteres" 
+                        className="form-input" 
+                        required 
+                      />
+                    </div>
+                    <p className="form-hint">Debe contener mayúsculas, minúsculas y números</p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirmar Contraseña</label>
+                    <div className="input-wrapper">
+                      <Lock className="input-icon" size={20} />
+                      <input 
+                        type="password" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repite tu contraseña" 
+                        className="form-input" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading} className="btn btn-primary btn-submit">
+                    {loading ? <Loader className="spin" size={24} /> : 'Restablecer Contraseña'}
+                  </button>
+                </form>
+
+                <div className="password-requirements">
+                  <p><strong>Requisitos de la contraseña:</strong></p>
+                  <ul>
+                    <li>Mínimo 8 caracteres</li>
+                    <li>Al menos una letra mayúscula</li>
+                    <li>Al menos una letra minúscula</li>
+                    <li>Al menos un número</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   const handleGetBackupCodes = async () => {
     if (!modalPassword) return;
@@ -756,7 +1062,16 @@ const App = () => {
               {loading ? <Loader className="spin" size={24} /> : mode === 'login' ? <><LogIn size={22} /> Iniciar Sesión</> : <><UserPlus size={22} /> Crear Cuenta</>}
             </button>
           </form>
-
+ {mode === 'login' && !mfaRequired && (
+          <div className="login-links">
+            <button
+              onClick={() => setPasswordRecoveryMode(true)}
+              className="btn-link forgot-password"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+        )}
           {mode === 'login' && !mfaRequired && (
             <div className="demo-credentials">
               <p className="demo-title"><Lock size={16} /> Credenciales de prueba:</p>

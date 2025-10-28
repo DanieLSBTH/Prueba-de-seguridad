@@ -1209,3 +1209,105 @@ body {
   letter-spacing: normal;
   font-family: inherit;
 }
+
+/* Estilos para recuperación de contraseña */
+.btn-back {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.btn-back:hover {
+  background: var(--gray-100);
+}
+
+.recovery-instructions {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: var(--gray-700);
+}
+
+.recovery-note {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.recovery-note ul {
+  margin: 0.5rem 0 0 1rem;
+}
+
+.recovery-note li {
+  margin-bottom: 0.25rem;
+}
+
+.header-email {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.token-invalid {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.password-requirements {
+  background: var(--gray-50);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.password-requirements ul {
+  margin: 0.5rem 0 0 1rem;
+}
+
+.password-requirements li {
+  margin-bottom: 0.25rem;
+}
+
+.login-links {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.forgot-password {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .recovery-note,
+  .password-requirements {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+}
